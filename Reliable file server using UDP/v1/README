@@ -1,0 +1,97 @@
+This file will describe the working of road runner (tftp file transfer)
+
+The client and server program consists of 2 files.
+
+The name of the client file is - rrunnerc.c
+The name of the server file is - rrunners.c
+
+The client - server implementation is a concurrent one.
+
+The client has the following functions - 
+
+1. void alarm_handler(int sig)
+The function is called when the timer expires waiting for response from server.
+No code is present in this because the retransmission logic for the client request is handled in another function.
+
+2. void verifyNumberOfArgs(int numberOfArguments)
+This function verifies that correct number of command line arguments are provided.
+
+3. void verifyCommandLineArguments(char filename[], unsigned short *secretKey, int *blockSize)
+This function verifies the following - 
+   a. The file name length is not more than 8 characters
+   b. The filename only consists of alphabet or '.' (no numbers or other special characters).
+   c. The secret key is in the range of [0,65535].
+   d. The block size is not greater than 1471.
+
+4. struct sockaddr_in populateSocketAddrObject(char *ipAddress,int portNumber)
+This function fills value in the socket object from the values provided in the function's parameters.
+
+5. void constructClientRequest(unsigned char clientRequest[], unsigned short *secretKey, char *fileName)
+This function constructs client request to be sent to the server from the provided secret key and filename.
+The first 2 bytes of the request are the secret key and the last 8 bytes consist of the file name.
+
+6. double getTime()
+This function will return the time in milliseconds.
+
+7. processServerResponse(int *sockfd, char*fileName, int *windowSize, int *blockSize, double *fileSize)
+This function will read the response coming from the server and write it to the output file.
+It will read the response in blocks, and fill the a buffer (with length = windowsize). 
+After it ensures that all blocks equivalent to the size of the window have been received and the last block has not arrived in the lot,
+it will write all the blocks to the file. The name of the output file will be ReceivedFile_<filename>, where filename is the file being copied.
+For example for a file abc, the name of the copied file will be ReceivedFile_abc
+When the last byte of the file to be copied arrives (checked by blocksize != block size provided in commandline), then the last buffer is written to the file and the execution returns from this function to the main function.
+
+8. int main(int argc, char **argv) 
+This function will act as a driver function. It will call all the other functions.
+After server sends the file, and the client writes the file to the disk, it will calculate and print the file size, throughput and RTT.
+It will then terminate execution.
+
+The server has the following functions - 
+
+1. void alarm_handler(int sig)
+The function is called when the timer expires waiting for response from client.
+No code is present in this because the retransmission logic for the server message is handled in another function.
+
+2. void verifyNumberOfArgs(int numberOfArguments)
+This function verifies that correct number of command line arguments are provided.
+
+3. bool validateSecretKey(int *secretKey)
+This function will validate that secret key is within the permitted range.
+
+4. struct sockaddr_in populateSocketAddrObject(char *ipAddress,int portNumber)
+This function fills value in the socket object from the values provided in the function's parameters.
+
+5. bool isValidIP(unsigned long ip)
+This function will validate that the request has been passed through the correct IP (HAAS or Lawson machines).
+
+6. void getClientSecretKeyandFileName(unsigned char clientMessage[], unsigned short *secretKey, char *filename)
+This function will extract the secret key and file name from the client's message.
+
+7. processClientRequest(char *fileName,struct sockaddr_in *cliAddr, char *ipAddress, int *timeout, int *windowSize, int *blockSize)
+This function will process the request obtained from the client. It will open the file desired by the client and then start reading it block by block. It has a window sized buffer where it will store all the blocks for a particular window. This buffer comes to use when the client acknowledgement is not received and the packets need to be retransmitted. After acknowledgement is received, again the file is read for windowsize number of blocks and the buffer is refilled until the end of file is reached. After that, the execution comes out of the function.
+
+8. int main(int argc, char **argv)
+This function will act as a driver function. It will call all the other functions and will create a separate child thread for each client that gets connected to a server. After the client is sent the entire file, the execution comes out of the child thread.
+The following message is displayed after the entire file is sent -
+"File Completely Read."
+
+The client-server app can be implemented as follows - 
+
+1. Server
+
+The following needs to be executed in the commandline
+./rrunners Server-IP Server-Port Secret-Key Block-Size Window-Size Timeout(in microseconds)
+
+Example -
+./rrunners 128.10.25.213 55556 11111 1471 40 1000000
+
+2. Client
+
+The following needs to be executed in the commandline
+./rrunnerc Server-IP Server-Port FileName SecretKey Block-Size Window-Size
+
+Example-
+./rrunnerc 128.10.25.213 55556 wik.txt 11111 1471 40
+
+The name of the copied file will be ReceivedFile_<filename>, where filename is the file being copied.
+For example for a file abc, the name of the copied file will be ReceivedFile_abc

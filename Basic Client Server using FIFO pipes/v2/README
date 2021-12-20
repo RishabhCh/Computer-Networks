@@ -1,0 +1,5 @@
+This README file is for Question 2 of the lab assignment.
+There are 2 executables commandserver.bin and commandclient.bin for the server and client respectively.
+The name of the server FIFO is serverfifo and will be stored in the serverfifo.dat file
+Client will read the name of the server FIFO from this file and write the user input in this FIFO.
+A server and multiple clients can be opened. All the user requests from the client will be executed using the server and will be displayed in the server stdout.

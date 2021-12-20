@@ -1,0 +1,31 @@
+This file will specify the working of the TCP Client Server
+
+The main execution of both the programs occurs in the main function.
+The name of the file containing client code is recommandclient.c .
+The name of the file containing server code is recommandserver.c .
+
+The server code has 3 functions apart from MAIN - 
+parsingfunction() - This function is used to break the linux command arguments and store them into an array so that they can be passed to execvp.
+coinToss() - This function generated 0 or 1 randomly (0 depicts heads and 1 depicts tails)
+isValidIP() - This function determines whether the IP is valid (that is belonging to HAAS or LWSN labs). For valid IPs, it returns true, otherwise it returns false
+
+The main() function has the main logic for the code.
+The server will toss a coin before reading the first message from the client. If heads is obtained, server will not read client's messages.
+Server will start reading client's messages only in case of Tails result of a coin toss.
+After coin toss, server checks client's IP. For correct IP, (belonging to HAAS or LWSN), the server starts reading the messages. 
+For an incorrect IP, server will terminate client socket.
+In a time, server will only take requests from atmost 5 clients.'
+
+The code can be run as follows:
+1. Run the makefile to compile the server file. 'recommandserver.bin' and 'recommandclient.bin' files will be generated after executing make file.
+2. Run the server by giving the following in command prompt/terminal:
+./recommandserver.bin Server_IP Server_Port
+
+As an example -
+./recommandserver.bin 128.10.25.213 55564
+
+2. Run the client by giving the following in command prompt/terminal:
+./recommandclient.bin Server_IP Server_Port
+
+As an example -
+./recommandclient.bin 128.10.25.213 55564

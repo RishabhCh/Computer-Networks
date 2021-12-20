@@ -1,0 +1,129 @@
+Authors:
+1. Ashwani Agarwal (agarw288@purdue.edu)
+2. Rishabh Chaddha (rchaddha@purdue.edu)
+
+
+This is the README file for the audio streaming client-server program that we implemented for Problem 1, Lab 5.
+
+The audiosrv server is a concurrent server and can serve multiple client requests at once.
+
+Running the program:
+Server:
+% audiosrv srv-IP srv-port lambda logfilesrv
+Client:
+% audiocli srv-ip srv-port audiofile blocksize buffersize targetbuf lambda method logfilecli
+
+
+There are 4 files in this folder: audiosrv.c, audiocli.c, utility.h, and audiocliparam.dat.
+
+1.) audiosrv.c:
+
+This contains the roadrunner server code. This file has 8 functions within it:
+
+a.) int main(): 
+This is the Driver code that performs the task of roadrunner server for file transfer using UDP. It calls the function `create_socket_and_bind()` to create a UDP socket and bind own's address to that socket.
+Upon receiving a client's request, this server forks a child process using `fork()` and delegates the task of file transfer to that child which makes this server a concurrent server by calling the function `handle_client_request()`.
+The `handle_client_request()` autheticates the client request by calling `authenticate_client_request()` and if the client is authenticated, then the requested audio file is sent to the client by the function `send_file_to_client()`.
+The client request contains the `blocksize` and the `filename` to be sent back to the client for audio streaming.
+The `send_file_to_client()` reads bytes from the file in `blocksize`. The read blocks are stored in a char buffer and sent simulataneouesly to the client using `sendto()`.
+After sending a packet to the client, the server sleeps for a time equivalent to `pspacing` which is `(1/lambda)` in unit of milliseconds. The server uses `nanosleep()` to sleep for the required time.
+The behavior of the server while sending packets to the cleint is further mentioned in the function `send_file_to_client()`.
+
+
+b.) void handle_client_request(srv_config* server, struct sockaddr_in *cliaddr, char* client_request, int client_number):
+Handle the incoming client request by sending the requested file if the client is authenticated. This is called per client in the child process created by `main()` using `fork()`. This calls the 	`send_file_to_client()` to start transmission.
+
+
+c.) void send_file_to_client(int* sockfd, struct sockaddr_in* cliaddr, streaming_config* stream):
+Reads the audio file from the local working directory and sends it to the client. The server store the `pspacing` value along with normalized timestamp as soon as it sends the packet.
+The file is read in size of `stream->blocksize` which was sent by the client itself in the request packet. This function sends a packet to the client and then sleeps for `pspacing` duration using `nanosleep()`. 
+This also keeps receving a feedback packet from the client by calling `recvfrom()` with `MSG_DONTWAIT` flag. Upon receiving a feedback from client, it fetches the new `pspacing` value from the packet. The server then sleeps for this new `pspacing` value in the next iteration.
+When the end of file is reached, server sends `8` empty packets to the client to indicate end of transmission.
+
+
+d.)void add_timestamp_and_lambda(streaming_config* stream)
+This function adds the `normalized timestamp` along with the current `lambda` value to a 2D array in the main memory.
+
+e.)void write_to_log_file(char* logfile)
+This function writes the contents of the 2D array, which contains the `timestamps` along with changing `lambda` values to the logfile provided as input to this program.
+
+f.) int authenticate_client_request(char* filename, struct sockaddr_in* cliaddr):
+This function checks authenticates the client request by performing various checks.
+It calls the is_client_ip_valid() function to verify if client IP is a known IP or not.
+Also checks the file requested by client exists or not.
+
+g.) int create_socket_and_bind(int *sockfd, struct sockaddr_in* servaddr, char* ip, int port):
+This function creates the UDP socket descriptor for `SOCK_DGRAM` and bind server's internet address and the port it is running on with the input server address and port number provided as input to this function.
+
+h.) int is_client_ip_valid(struct in_addr* client_ip):
+This function checks if the client IP belongs to the known internal hosts IP or not. If the client IP does not match with the trusted IPs, then 0 is returned else 1 is returned.
+
+
+
+
+2.) audiocli.c:
+
+This contains the roadrunner client code. This file has 12 functions within it:
+
+a). int main():
+This is the Driver code that performs the task of roadrunner client. It first validates the user input by calling the function `validate_input()`. Proceeding further, it calls the `create_socket_and_bind()` function to bind the socket to client and create the server address space to which the request will be sent.
+It forms the 10 byte client request where the first two bytes are the `blocksize` and the next 8 bytes are the `filename` sent to the server.
+It then calls the `sendto()` function to transmit the request to the server and then the function `get_server_response_to_stream()` is called to wait on server's response and proceed further accordingly. Before sending the request to the server, it sets the timer by calling `set_timer()` function defined in "utility.h" which takes an input of microseconds to start the timer using `setitimer()` for `ITIMER_REAL`.
+If the server response doesn't arrive within the given timeout limit, the there are 3 attempts to resent the request. If the server still doesn't responsd, the client ceases the operation.
+
+b.) void create_socket_and_bind(int* sockfd, struct sockaddr_in* servaddr,
+							char* server_ip, int server_port):
+This function creates the UDP socket descriptor and bind server's internet address and the port it is running on ith the input server address and port number provided as input to this function.
+
+c.)void assignControlConstants():
+This reads the `epsilon` and `gamma` values from the `audiocliparam.dat` file. 
+
+d.) int get_server_response_to_stream(int* sockfd)
+Writes the file content received from the server to a file in a buffer using `producer` and `consumer`. The producer and consumer uses `semaphore` to tackle the problem of concurrent reads and writes from the audio buffer.
+The producer calls `recvfrom()` to wait for the server's response. Upon receiving the server's response, it writes it to the audio buffer.
+The consumer runs when the timer of `313` milliseconds goes off, it reads the audio data from the buffer to send it to `mulawwrite()` for streaming. 
+
+e.) int validate_input(cli_config* client):
+Validates the user input provided as command line arguments.
+
+Validate that the filename if of 8 bytes at max and contains valid ASCII character, and only lower-case and upper-case alphabets or a '.' used for file extension.
+Also validates that the buffersize and targetbuf are multiples of 4096.
+
+f.) void send_feedback_to_server():
+This function sends the feedpacket packet to the server with the new pspacing value.
+***NOTE*** When the lamda values falls down below `0`, then a maX wait time of `999 milliseconds` is sent to the server. 
+
+g.) void write_to_log_file():
+This function writes the contents of the 2D array, which contains the `timestamps` along with changing `current_bufsize` values to the logfile provided as input to this program.
+
+h.) void add_timestamp_and_bufsize():
+This function adds the `normalized timestamps` along with changing `current_bufsize` to a 2D array in main memory.
+
+i.) void read_from_buffer():
+his function reads bytes from the buffer to stream audio through `mulawwrite()` function call. It calls the `add_timestamp_and_bufsize()` in the end to log the current buffersize along with the timestamp.
+
+j.) void write_to_buffer():
+This function writes data to the buffer in a `Round Robin fashion`. It calls the `add_timestamp_and_bufsize()` in the end to log the current buffersize along with the timestamp.
+
+k.) void signal_handler(int sig):
+Signal handler function that handles the interrupt caused by `SIGALRM`.
+It calls the read_from_buffer() to read bytes from the buffer and  stream audio.
+
+l.) void updateLambda():
+This implements the menthods `C and D` to update the `lambda` values.
+
+3.) utility.h:
+
+This is an utility file that contains 4 functions used in multiple places throughout the main code:
+
+a). void do_error(char *msg):
+A wrapper method for perror. It logs the error message and terminates the process.
+
+b). int current_time_in_msec():
+The function fetches the current time using `gettimeofday()` and returns it in milliseconds.
+
+c). void set_timer(int timeout):
+The function calls `setitimer` for `ITIMER_REAL` to set a timer for give timeout in microseconds.
+
+d). void alarm_handler_util(int sig):
+The signal handler to catch the SIGALARM. This is an empty function and is not required to do anything here but to just stop the program from terminating when SIGALARM is encountered.

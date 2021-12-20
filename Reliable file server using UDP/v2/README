@@ -1,0 +1,67 @@
+This file will describe the working of the client server program in which the client does not share the secret key with the server directly.
+
+The client and server program consists of 2 files.
+
+The name of the client file is - rrunnerc.c
+The name of the server file is - rrunners.c
+
+The name of the file where IP addresses are maintained along with the secret key is - acl.dal
+
+The client will XOR the secret key with its IP address (both in unsigned int format), and then pass this along with the file name to the server.
+
+The server will find the client's public key from the acl.dat file and XOR the client message with the public key.
+Then the server will verify the resultant unsigned integer with client's IP address. If the client's IP matches with the unsigned integer obtained as a result of XOR operation, the server will start sending the message to the client.
+
+The provided acl file should have the following properties for proper execution- 
+1. The name of the file is acl.dat
+2. The IP and key are given in the following manner
+
+IPAddress1 publicKey1
+IPAddress2 publicKey2
+
+That is ip-address, then one space " ", then the public key corresponding to the IP address.
+For example - 
+128.10.25.213 12345
+128.10.112.135 11111
+128.10.25.214 12334
+
+In the acl.dat file provided with the solution, the IP addresses and public keys for pod3-3, amber05, and pod3-4 machines have been provided.
+
+The following changes (after problem 1) have been done to the client file -
+
+1. A function "char * getClientIP()" has been introduced to get the client's IP address so that the client can XOR it with its secret key
+
+2. A function "unsigned int bbdecode(unsigned int x, unsigned int prikey)" has been added which is called from the main function to get the XOR of client IP and primary key, which can be passed in the client request to the server.
+
+3. The length of the client message has been increased to 12 bytes instead of 10 bytes.
+
+The following changes (after problem 1) have been done to the server file -
+
+1. The client message extraction logic now retrieves a 4 - byte XOR unsigned integer instead of a 2 byte secret key.
+
+2. A new function "unsigned int getPublicKeyFromACL(unsigned int clientIP)" has been added to find out the public key corresponding to the client IP from acl.dat file.
+
+3. A new function "unsigned int bbencode(unsigned int y, unsigned int pubkey)" has been added to get the XOR of the secret message sent by the client and the public key obtained from the acl.dat file.
+
+4. Client IP is validated with the XOR value obtained from bbencode function.
+
+The client-server app can be implemented as follows - 
+
+1. Server
+
+The following needs to be executed in the commandline
+./rrunners Server-IP Server-Port Block-Size Window-Size Timeout(in microseconds)
+
+Example -
+./rrunners 128.10.25.213 55556 1471 40 1000000
+
+2. Client
+
+The following needs to be executed in the commandline
+./rrunnerc Server-IP Server-Port FileName SecretKey Block-Size Window-Size
+
+Example-
+./rrunnerc 128.10.25.213 55556 wik.txt 11111 1471 40
+
+The name of the copied file will be ReceivedFile_<filename>, where filename is the file being copied.
+For example for a file abc, the name of the copied file will be ReceivedFile_abc

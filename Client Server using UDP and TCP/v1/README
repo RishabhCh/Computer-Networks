@@ -1,0 +1,35 @@
+The solution consists of 3 files:
+mypingsrv.c // Server
+mypingcli.c // Client
+pingparam.dat // To provide parameters
+
+Populating the pingparam file -
+pingparam file will have the values
+N T D S
+where N,T,D,S are symbols according to the question. 
+By default, the values provided while submitting the solution are:
+N = 5, T = 1, D = 2, S = 1234
+So, for instance, 2 messages are to be sent with 2 second time delay at the client and 1 second time delay at the server with the message 1357, then the 
+Pingparam file will look like:
+2 2 1 1357
+
+Please note, program is written in a way that the value for S should be a 4 digit integer(1000 to 9990), (resembling 4-byte payload). 
+Any other value will result in incorrect execution.
+
+The client will send the 4-digit message value in the pingparam file for N (symbol according to the question) times., each time, the 
+number that is sent will be incremented by 1.
+The server will receive the message concatenated with the D delay seconds and will act accordingly.
+
+The code can be run as follows:
+1. Run the makefile to compile the client and server files. 'mypingsrv.bin' and 'mypingcli.bin' files will be generated after executing make file.
+2. Run the server by giving the following in command prompt/terminal:
+./mypingsrv.bin Server_IP Server_Port
+
+As an example -
+./mypingsrv.bin.bin 128.10.25.213 55564
+
+2. Run the client by giving the following in command prompt/terminal:
+./recommandclient.bin Client_IP Server_IP Server_Port
+
+As an example -
+./mypingcli.bin 128.10.112.135 128.10.25.213 55564

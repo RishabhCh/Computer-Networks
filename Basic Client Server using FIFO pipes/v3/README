@@ -1,0 +1,8 @@
+This is the directory for the solution of Question 3.
+After executing the makefile, 
+The name of the server executable will be - commandserver.bin
+The name of the client executable will be - commandclient.bin
+On opening the client for each time, a client FIFO will be made.
+For the server, only one FIFO - serverfifo will be made. The name for this will be stored in serverfifo.dat file after the server is executed.
+After opening a server and multiple client executables, the output of any command in the client will be displayed in the client window itself.
+The string parsing function has been changed for this question. A delimiter is added so that the function is flexible for splitting strings separated by any delimiter.

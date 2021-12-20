@@ -1,0 +1,104 @@
+This file will describe the working of the File server.
+
+The FTP client and server is contained in 2 files.
+
+The client source code file has the file name - myftpc.c
+The server server code file has the file name - myftps.c
+
+Both the client and server source code are divided into functions.
+
+In the client source code myftpc.c, the following functions are used - 
+
+1. int main(int argc, char **argv) -
+This is the driver function for the program. It will call the other functions to execute the FTP client logic. It will establish the connection to the server and form the client message from the command line arguments. Then it will call the function to send request to the server and read the file response from the server. This function does all these things by calling the other functions.
+
+2. alarm_handler(int sig) - 
+This function will remain empty. It is added for transfer of control when the alarm expires. Since we dont want any special task on alarm expiry, this function will remain empty.
+
+3. verifyCommandLineArguments(char filename[], int secretKey) - 
+
+This function will verify that the filename and the secret key are provided in correct format (filename contains only alphabetic letters and secret key is in range of 0 to 65535).
+
+4. populateSocketAddrObject(char *ipAddress,int portNumber) -
+
+This function will be used to create a socket object and return it. The object us created using the ip address and port number provided as arguments.
+
+5. createAndConnectSocket(int *serverSocketDescriptor, struct sockaddr_in *servAddr) -
+
+This function will establish connection to the server by creating a socket and connecting to the server ip address.
+
+6. double get_time_in_msec() - 
+
+This function will return the current time in milliseconds.
+
+7. readFileFromServer(int *serverSocketDescriptor, struct sockaddr_in *servAddr,int blockSize, char clientRequest[], double *requestSendTime, double*fileReceiveTime, char filename[]) - 
+
+This function will read the server response which is essentially the blocks of data of the file which is being transferred from the server to the client. When the first block arrives, a file named ReceivedFile_<requested file name> will be created. The blocks received from the server will be written in this file. 
+This function also has the logic to handle upto 3 request rejects resulting from heads in coin toss.
+
+In the server source code myptps.c, the followinf functions are used - 
+
+1. verifyNumberofArgs(int numberOfArgs) - 
+
+This function will verify that the correct number of command line arguments are provided to the server.
+
+2. void verifySecretKey(int secretKey) - 
+
+This function will verify that the correct secret key provided in the command line arguments is in the correct range.
+
+3. populateSocketAddrObject(char *ipAddress,int portNumber) - 
+
+This function will populate and return the server socket object with the provided ip address and port number.
+
+4. coinToss() -
+
+This function will be created to give the result for coin toss. 0 means heads and 1 means tails.
+
+5. isValidIP(unsigned long ip) - 
+
+This function will validate that the client has an ip address which can be allowed to communicate with the server.
+
+6. getClientSecretKeyandFileName(char clientMessage[], int *secretKey, char *filename) - 
+
+This function will obtain the secret key and file name from the client request.
+
+7. sendFileToClient(FILE *filePointer, int clientSocketFD, int blocksize) - 
+
+This function will send the file to the client in blocks.
+
+8. processClientRequests(int parentSocketFD, int serverSecretKey, int blocksize) - 
+
+This function will process the client requests and send the files to the client. This contains the main server logic.
+
+9. int main(int argc, char**argv) - 
+
+This is the driver function for the server. It will call other functions to execute the server logic.
+
+To run the server, the following should be provided in the terminal (or command prompt) - 
+./myftps.bin Server-IP Server-Port secretkey blocksize
+
+For example -
+./myftps.bin 128.10.25.213 55555 12345 1024
+
+Server may reject client request due to a variety of factors like coin toss, invalid ip etc.
+
+To run the client, the following should be provided in the terminal (or command prompt) - 
+./myftpc.bin Server-IP Server-Port filename secretkey blocksize
+
+For example -
+./myftpc.bin 128.10.25.213 55555 ASC.pdf 12345 1024
+
+Please note that as mentioned in the question, the file name can contain only alphabet and '.' . The file name cannot contain numbers or other special characters.
+
+After the file transfer is complete, the server will display the following message - 
+Complete File Sent to the Client.
+
+After the file transfer is complete, the client will display the following message - 
+File has been read.File Size is: ______________ bytes
+Round Trip Time is: ________________ milliseconds
+Throughput is: __________________ Megabits / Seconds
+
+With appropriate values in the blanks.
+
+The copied file will be in the same folder as the client and will be named as ReceivedFile_<requested file name>
+For example, ASC.pdf after copying will be named as ReceivedFile_ASC.pdf

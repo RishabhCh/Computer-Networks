@@ -1,0 +1,37 @@
+This file will describe the working of a ftp client server that encodes bits and sends files.
+
+The client and server program consists of 2 files.
+
+The name of the client file is - rrunnerc.c
+The name of the server file is - rrunners.c
+
+The program will encrypt all the bits of the block at the server, and make the client decrypt those bits before writing them to the file.
+
+It has the following changes from problem 2 - 
+
+1. In Client -
+For the block sized buffer read as the response from the server, XOR will be done (using bbdecode function) for all the bytes of the block. The least significant byte from the result of the XOR will be stored in the buffer and after this operation, the buffer will be written to the output file.
+
+2. In Server -
+For the block sized file block, each byte will be encoded by bbencode function and the public key of the client. The least significant bit from the resultant XOR will be stored in the buffer, and the entire encoded block will be sent to the client.
+
+The program can be implemented as follows -
+
+1. Server
+
+The following needs to be executed in the commandline
+./rrunners Server-IP Server-Port Block-Size Window-Size Timeout(in microseconds)
+
+Example -
+./rrunners 128.10.25.213 55556 1471 40 1000000
+
+2. Client
+
+The following needs to be executed in the commandline
+./rrunnerc Server-IP Server-Port FileName SecretKey Block-Size Window-Size
+
+Example-
+./rrunnerc 128.10.25.213 55556 wik.txt 11111 1471 40
+
+The name of the copied file will be ReceivedFile_<filename>, where filename is the file being copied.
+For example for a file abc, the name of the copied file will be ReceivedFile_abc

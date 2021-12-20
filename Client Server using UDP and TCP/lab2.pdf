@@ -1,0 +1,15 @@
+Ping times obtained from the program
+
+LWSN to LWSN ~ 0.222 milliseconds
+LWSN to HAAS ~ 0.640 milliseconds
+
+Ping times obtained from /bin/ping
+
+LWSN to LWSN ~ 0.145 milliseconds
+LWSN to HAAS ~ 0.260 milliseconds
+
+Interpretation of this
+Due to distance, LWSN to LWSN pings are much shorter as they are in the same building.
+
+Ping command is much faster than the ping implemented in the solution (Datagram (UPD) sockets). 
+This means that whichever protocol ping command is using, it is faster than UPD protocol.
